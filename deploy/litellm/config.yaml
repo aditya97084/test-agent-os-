@@ -1,0 +1,130 @@
+# LiteLLM Proxy config — REAL ordered fallback chains.
+# App code only ever sends the group name (planning / coding / research / fast / vision / local);
+# raw model IDs live ONLY here (Law 1 + Law 7). Verified current IDs, 2026-09.
+#
+# Design: each primary group has exactly ONE deployment; on failure (after 1 retry)
+# the router falls through to the *_failover group (MiniMax → local Ollama).
+# Cooldown stops hammering a dead provider. Cost/tokens logged by LiteLLM.
+
+litellm_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  drop_params: true            # provider-agnostic: unknown params dropped, not errored
+  set_verbose: false
+  log_raw_request_response: false
+
+router_settings:
+  num_retries: 1
+  retry_after: 2               # seconds before retrying same deployment
+  allowed_fails: 2             # errors before cooldown
+  cooldown_time: 120           # dead provider rests 2 min
+  fallbacks:
+    - planning: ["planning_failover"]
+    - coding:   ["coding_failover"]
+    - research: ["research_failover"]
+    - fast:     ["fast_failover"]
+    - vision:   ["vision_failover"]
+
+model_list:
+  # ================= planning — Hermes / orchestration / decomposition =================
+  - model_name: planning
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6      # 1M ctx; primary cognitive model
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 16000
+      stream_timeout: 300
+    model_info: { id: planning__sonnet-primary }
+  - model_name: planning_failover
+    litellm_params:
+      model: openai/MiniMax-M3               # 1M ctx agentic fallback — via OpenAI-compat endpoint
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      max_tokens: 16000
+    model_info: { id: planning__minimax-m3 }
+  - model_name: planning_failover
+    litellm_params:
+      model: ollama_chat/qwen3:8b            # free local floor (needs: ollama pull qwen3:8b)
+      api_base: http://host.docker.internal:11434
+      api_key: "ollama"
+    model_info: { id: planning__local-qwen3 }
+
+  # ================= coding — patch/edit/test inside workspaces =================
+  - model_name: coding
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 32000
+    model_info: { id: coding__sonnet-primary }
+  - model_name: coding_failover
+    litellm_params:
+      model: openai/MiniMax-M3               # strong agentic coding + long context
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      max_tokens: 32000
+    model_info: { id: coding__minimax-m3 }
+  - model_name: coding_failover
+    litellm_params:
+      model: ollama_chat/qwen3-coder:30b     # free local (needs: ollama pull qwen3-coder:30b)
+      api_base: http://host.docker.internal:11434
+      api_key: "ollama"
+    model_info: { id: coding__local-qwen3coder }
+
+  # ================= research — long-context ingestion, SERP/SUMMARY =================
+  - model_name: research
+    litellm_params:
+      model: openai/MiniMax-M3               # 1M ctx = cheap long-doc research primary
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      max_tokens: 16000
+    model_info: { id: research__minimax-primary }
+  - model_name: research_failover
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+    model_info: { id: research__sonnet-failover }
+  - model_name: research_failover
+    litellm_params:
+      model: ollama_chat/qwen3:8b
+      api_base: http://host.docker.internal:11434
+      api_key: "ollama"
+    model_info: { id: research__local }
+
+  # ================= fast — titles/captions/classify/routing (high volume, cheap) =================
+  - model_name: fast
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 2000
+    model_info: { id: fast__haiku-primary }
+  - model_name: fast_failover
+    litellm_params:
+      model: openai/MiniMax-M2.7-highspeed   # ~100 tps
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      max_tokens: 2000
+    model_info: { id: fast__minimax-highspeed }
+  - model_name: fast_failover
+    litellm_params:
+      model: ollama_chat/llama3.2:3b
+      api_base: http://host.docker.internal:11434
+      api_key: "ollama"
+    model_info: { id: fast__local-small }
+
+  # ================= vision — screenshots, video frames, thumbnails =================
+  - model_name: vision
+    litellm_params:
+      model: gemini/gemini-2.5-flash         # verify current Gemini ID at setup (docs.ai.google.dev)
+      api_key: os.environ/GEMINI_API_KEY
+    model_info: { id: vision__gemini-primary }
+  - model_name: vision_failover
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6     # Sonnet is multimodal — usable fallback
+      api_key: os.environ/ANTHROPIC_API_KEY
+    model_info: { id: vision__sonnet-failover }
+
+  # ================= local — explicit free-only group (privacy/offline tasks) =================
+  - model_name: local
+    litellm_params:
+      model: ollama_chat/qwen3:8b
+      api_base: http://host.docker.internal:11434
+      api_key: "ollama"
+    model_info: { id: local__qwen3 }
