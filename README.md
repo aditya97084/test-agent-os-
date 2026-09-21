@@ -13,6 +13,8 @@
 | `docs/AUDIT_PROMPT.md` | `D:\AI_SYSTEM` audit ka exact prompt (WORKING/PARTIAL/MOCK/BROKEN/MISSING/DO_NOT_REUSE) |
 | `docs/ACCEPTANCE_TESTS.md` | Har phase ka pass/fail gate + final Tests 1–10 |
 | `docs/RESEARCH_TRACK_JULIAN_GOLDIE.md` | Parallel research track (Track 2) — forensic prompt, core build ko block nahi karta |
+| `docs/research/JARVIS_HOLO_PACK_RECON.md` | Jarvis/Holo packs ka forensic recon — har feature ka ADOPT/ADAPT/DEFER/REJECT verdict + phase mapping (E-rules yahi se aayi) |
+| `workflows/backlog/jar-backlog.yaml` | JAR-001…016 + H1–H4 — machine-readable backlog; coding agent inhi items ko apne phase me uthayega |
 | `contracts/*.json` | Task state / Agent registry / Workflow node — machine-readable schemas (agent inhi ko implement karega) |
 | `contracts/worker_contract.md` | Worker interface (Python + TypeScript dono) |
 | `deploy/` | **Real, runnable** infra: docker-compose (Temporal + Postgres/pgvector + Redis + LiteLLM), LiteLLM config with actual model routing (Sonnet 4.6 primary → MiniMax-M3 fallback → Ollama local), `.env.example`, setup/verify scripts |

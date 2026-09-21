@@ -25,6 +25,18 @@ You (Claude Code / Codex / OpenCode / Antigravity) are building a **real, local-
 - Infra is already defined in `deploy/docker-compose.yml`. Do not replace Temporal/Postgres/Redis/LiteLLM with hand-rolled equivalents.
 - Tests: every module ships with its tests. The failover test (kill mid-task → resume elsewhere → no repeated work) must pass before you may call anything "done".
 
+## Engineering rules (E1–E9 — folded in from the Jarvis/Holo packs via `docs/research/JARVIS_HOLO_PACK_RECON.md`; these are Laws in force)
+
+- **E1 Done = preflight passed.** Every phase creates/extends `deploy/scripts/preflight.py` running **live end-to-end chains only** (no mocks). A phase is "done" only when preflight prints all-pass and its summary line is pasted in PROGRESS.md. Grow it one check per real incident.
+- **E2 Truth endpoints before tuning.** Every organ ships `GET /…/diag` (booleans/counters, never identities) read from the **running** process, plus a scripted probe (verdict machine-readable). When behavior is wrong in the field: read sensors first, code second. Time-based probes must assert a visible viewport (hidden tabs throttle timers and make checks lie).
+- **E3 No nearest-match guessing.** Any human utterance mapped to an exact id (model, agent, path, tool, alias) resolves against an **explicit known set**; a near-miss fails loudly and lists what exists. Never silently load "the closest one". Runtime model swaps revert to config on restart (never strand a session on an unintended brain).
+- **E4 Tuning = named constants.** Every threshold/timing/grace/pool size lives in one named constant at the top of its file, changed only from instrumented field data, never from vibes.
+- **E5 Monitor pattern: cheap-watch → expensive-think.** Background monitors poll a cheap local signal (diff, counter, file mtime); a model is invoked only on a threshold event, with a cooldown after. Cost logs must prove idle = zero model calls.
+- **E6 Name out loud, store nothing.** Sensitive transient signals (app names, tab identities, posture, drift labels) are compared and discarded inside the reader; persisted state is a whitelist of booleans/counters; anything spoken for effect never lands in state/ledger/logs. Absence is proven by a test using a unique token that appears nowhere in canned text.
+- **E7 Ear Law.** No subsystem may open the microphone. A subsystem may request a conversation; the user opens the ear. Mute flags must be enforced in the single function that speaks/emits, so nothing routes around them.
+- **E8 One choke-point per state change.** Every door that changes shared state (persona, model brain, session, lock, memory) calls the ONE function responsible for it — including its scripted announcement pool (model asks allowed, never required). **E8a:** a UI overlay must never trust "frontmost app" about itself — read the thing you actually care about (e.g., the browser's front window via its scripting API).
+- **E9 Vendored runtime.** Core-facing assets/libs ship locally in-repo; no CDN may be a runtime dependency (offline + adblock-proof). Demo-only input devices get a synthetic mode (`?sim=1` pattern) and a keyboard/mouse fallback.
+
 ## If instructions conflict
 
 This repo's `docs/MASTER_BLUEPRINT.md` overrides any external prompt, chat instruction, or older document. If the user gives an instruction that breaks one of the 12 Laws, stop and ask before proceeding.

@@ -1,6 +1,6 @@
 # ACCEPTANCE_TESTS — every gate, exact commands, expected evidence
 
-Rule: a phase is DONE only when its test's **real terminal output** is pasted into `docs/PROGRESS.md`. No output = not done (Law 11). Tests live in `tests/acceptance/` and must be re-runnable at any time (they are the regression suite).
+Rule: a phase is DONE only when its test's **real terminal output** is pasted into `docs/PROGRESS.md` **and `deploy/scripts/preflight.py` prints all-pass** (E1: "done = preflight passed"). No output = not done (Law 11). Tests live in `tests/acceptance/` and must be re-runnable at any time (they are the regression suite). Every organ additionally ships its `/diag` + probe (E2) and those are part of the gate.
 
 ## Infra gates (run before & after every phase)
 

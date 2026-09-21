@@ -156,17 +156,17 @@ Each phase lists its **acceptance test** — the only definition of done. Full d
 | Phase | Content (merged) | Acceptance gate |
 |---|---|---|
 | **-1** | **EXISTING SYSTEM AUDIT** — scan all of `D:\AI_SYSTEM`; classify every file/component WORKING/PARTIAL/MOCK/BROKEN/MISSING/DO_NOT_REUSE; delete nothing | `docs/AUDIT_REPORT.md` exists; user explicitly confirms preserve-list |
-| **0** | **CORE SKELETON** — Tauri shell stub + FastAPI Gateway + Postgres + Redis + Temporal wired (compose is already in `deploy/`); task create → run → state visible | kill app mid-task → reopen → **resumes at same step** |
-| **1** | **MODEL + AGENT LAYER** — LiteLLM groups live; Hermes adapter; Claude/Codex/Antigravity/OpenCode adapters; Agent Registry + Health Manager; capability routing; direct-chat API for dashboard | disable primary model mid-run → secondary worker continues same task |
+| **0** | **CORE SKELETON** — Tauri shell stub + FastAPI Gateway + Postgres + Redis + Temporal wired (compose is already in `deploy/`); task create → run → state visible; `preflight.py` v1 (E1) + vendored runtime assets (E9) | kill app mid-task → reopen → **resumes at same step**; preflight summary line all-pass |
+| **1** | **MODEL + AGENT LAYER** — LiteLLM groups live; Hermes adapter; Claude/Codex/Antigravity/OpenCode adapters; Agent Registry + Health Manager; capability routing; direct-chat API for dashboard; voice-driven brain-swap with exact-id honesty guard (E3) + scripted announcement pools (E8) | disable primary model mid-run → secondary worker continues same task; naming a non-existent model → **loud refusal listing what exists, never nearest-match**; restart reverts to config brain |
 | **2** | **TASK STATE + CHECKPOINT + FAILOVER** — full `task_state.schema.json` enforced; checkpoint before every step; agent_history/failure_history | Claude fails mid-task → Codex resumes from checkpoint, **no repeated work** (git diff proves it) |
-| **3** | **BROWSER + DESKTOP CONTROL** — Playwright persistent profile; Windows UIA; per-action audit log; approval gate before submit/send/delete | open → search → read → fill form → **approval screen appears before submit** |
-| **4** | **VOICE + 4-LAYER MEMORY** — Gemini Live pipeline, Hinglish STT; working/episodic/semantic/Obsidian; source-backed recall; memory-write after every task | restart app → recall old project decision **with source shown** |
+| **3** | **BROWSER + DESKTOP CONTROL** — Playwright persistent profile; Windows UIA; per-action audit log; approval gate before submit/send/delete; vision-freshness contract (frame at ask-time, share-ended = honest error, MIME must match encoding — JAR-006) | open → search → read → fill form → **approval screen appears before submit**; stale-frame test: cover screen after share start → answer describes NEW content or says source ended |
+| **4** | **VOICE + 4-LAYER MEMORY** — Gemini Live pipeline, Hinglish STT, web-lite browser channel (FINISH_MS buffer, Ear Law); `/memory/capture` atomic write+index; Tier-0 keyword retrieval fallback; persona block + live-count greetings; source-backed recall; memory-write after every task (JAR-001…005) | restart app → recall old project decision **with source shown**; "remember that…" retrievable in the NEXT question; mid-sentence pause must not dispatch (900 ms window) |
 | **5** | **WORKFLOW ENGINE + KANBAN + PIPELINE** — workflow node schema (`contracts/workflow_node.schema.json`); Kanban BACKLOG→…→BLOCKED; pipeline viz; agents auto-pick cards | one YAML workflow runs end-to-end through ≥2 different agents; Kanban reflects states live |
-| **6** | **SCHEDULER + 24×7 WORKERS** — cron/event/file-change/GitHub triggers; queue; retry engine; async (UI never freezes) | "daily 08:00 AI news research" survives **machine reboot** and executes next morning |
+| **6** | **SCHEDULER + 24×7 WORKERS** — cron/event/file-change/GitHub triggers; queue; retry engine; async (UI never freezes); **FOCUS/ACCOUNTABILITY engine** (1s-tick durable session, fresh frontmost read, host-hash lock, settle-announce-fallback attach, E6 name-out-loud-store-nothing, aggregates-only ledger) + E5 cheap-watch→expensive-think monitor pattern for ALL watchers (JAR-009…014) | "daily 08:00 AI news research" survives **machine reboot**; focus session survives reboot AND reload; idle watch costs zero model calls (cost log); privacy test with unique token proves no identity persistence |
 | **7** | **VIDEO/CREATIVE AUTOPILOT** — Research→Script→Storyboard→Assets→Remotion/FFmpeg→QA→Approval; Creative Bible per project; JAG-xxx backlog feeds **sandboxed** | one topic → approved MP4 + thumbnail + caption + metadata (no fake render — real file on disk) |
 | **8** | **SEO + SOCIAL PUBLISHING** — official OAuth only; approval-gated publish; post receipts; analytics ingestion; SEO engine (keywords/SERP/gap/on-page/reporting) | draft → approve → published URL receipt returned → analytics ingested |
 | **9** | **EVOLUTION ENGINE + COMPANY MODE** — GitHub discovery → sandbox → compare → human approval → registry update; Company org tree (Founder→Hermes Manager→dept→project→task→agent) | one discovered repo goes through full sandbox pipeline and is REJECTED or APPROVED with report |
-| **10** | **DASHBOARD POLISH + 3D WORKSPACE** — Command Center, agent sidebar, direct chats, Gallery, Reports, cinematic-dark UI, optional 3D graph | every dashboard element backed by a real endpoint (spot-check API call trace) |
+| **10** | **DASHBOARD POLISH + 3D WORKSPACE** — Command Center, agent sidebar, direct chats, Gallery, Reports, cinematic-dark UI, optional 3D graph with U1–U5 (provenance must match cited set, no screen-narration, small-talk = no view side-effects, synthetic-input mode, held-pose gestures); hands/gestures stay an **experiment behind a flag** (JAR-H1 via Phase 9) | every dashboard element backed by a real endpoint (spot-check API call trace); ≥4-source answer lights cluster, never one node |
 | **11** | **SECURITY HARDENING + FULL INTEGRATION** — secret scan, 12-laws audit, **Tests 1–10 of §9 all pass** | all green, evidence in PROGRESS.md |
 
 **Never** reorder to "UI first". That is the one mistake that kills this project.
@@ -224,10 +224,44 @@ Task lifecycle states (locked): `CREATED · PLANNING · RUNNING · WAITING_FOR_U
 - **R4 Skill isolation ban:** all agents read shared `skills/` registry; no per-agent private knowledge copies.
 - **R5 Creative Bible:** every creative project keeps `character.json · brand.json · visual-style.json · voice-profile.json · negative-rules.json · reference-assets/` — style analysis extracts *attributes*, never copies content.
 - **R6 Publishing:** official platform OAuth APIs are primary; unofficial login automation is not an allowed primary route; every publish needs an approval record + receipt artifact.
-- **R7 Research discipline:** third-party findings (Julian track) enter only as `JAG-xxx` backlog items with FACT/INFERENCE/UNKNOWN tags, then Phase 9 pipeline. UI-without-mechanism proposals are auto-rejected.
+- **R7 Research discipline:** third-party findings (Julian track, Jarvis/Holo packs, any future paste) enter only as `JAG-xxx` / `JAR-xxx` backlog items with FACT/INFERENCE/UNKNOWN tags, then the Phase 9 pipeline where applicable. UI-without-mechanism proposals are auto-rejected.
+- **R8 Proof culture (E1/E2):** "done" = `preflight.py` all-pass summary line pasted in PROGRESS.md; every organ ships `/diag` + probe; sensors are read before code when a feature misbehaves.
+- **R9 Dignity of senses:** all desktop senses (eyes/pose, screen watch, focus, anything `sense.*`) are opt-in per session, approval-gated (Law 5), local-only, and obey E6 (identity discarded inside reader) + E7 (Ear Law). Frames/recordings are never persisted by default; retention of ANY capture requires explicit per-project user instruction.
 
 ## §11. Working with this document
 
 - Implementers: read §2, §5, §6, §7, then `docs/BRIEF_PHASE_0.md`. Contracts in `contracts/` are normative.
 - Progress: `docs/PROGRESS.md`, evidence-tagged (Law 11).
 - Infra: already real in `deploy/` — `setup.ps1/sh`, LiteLLM config with live Sonnet/MiniMax/Ollama routing, health verification. Boot it before coding; verify before "done".
+
+## §12 Annex J — External pack integration (Jarvis/Holo, Sept 2026)
+
+Full forensic recon + per-feature verdicts: `docs/research/JARVIS_HOLO_PACK_RECON.md`. Machine backlog: `workflows/backlog/jar-backlog.yaml` (JAR-001…016 folded into phases per §7 rows; JAR-H1 hands = sandbox-only experiment; H3/H4 rejected with reasons).
+
+What it added to this blueprint (summary, so nothing is lost if the annex docs are not read):
+
+| Adopted whole (now AGENTS.md Laws E1–E9) | Their origin |
+|---|---|
+| E1 `preflight.py` live-chain harness; done=preflight-passed; one new check per incident | Jarvis P07 |
+| E2 truth endpoints: `/diag` booleans-only from RUNNING process, scripted probes, viewport-asserted timing tests | Jarvis P16 |
+| E3 exact-id registry + loud refusal on near-miss (model/agent/path names); runtime swap reverts on restart | Jarvis P08 |
+| E4 every tuning knob = named constant, tuned from field data only | Jarvis P02/P09 |
+| E5 cheap-watch→expensive-think monitor architecture (idle cost = 0 model calls) | Jarvis P14 |
+| E6 name-out-loud-store-nothing privacy by structure + unique-token absence test | Jarvis P09/P12 |
+| E7 Ear Law: nothing opens the mic; mute flag in the single emit function | Jarvis P02/P13 |
+| E8 one choke-point per state change (+E8a overlay never trusts frontmost) | Jarvis P11/P15 |
+| E9 vendored runtime, no CDN dependency; `?sim=1` synthetic-input + fallback | Holo pack |
+
+| Adopted into a phase (not just rules) | Phase |
+|---|---|
+| Tier-0 keyword retrieval fallback (works w/o embeddings), numeric node-id provenance contract | 4 |
+| web-lite voice channel (browser STT/TTS, FINISH_MS=900 buffer, status line) as 3rd voice path | 4 |
+| `/memory/capture` atomic write+index, never-silent-forget, spoken confirmation in persona | 4 |
+| Persona single-block `config/persona.md`; live-count greetings; model-family scripted announcement pools | 1/4 |
+| Provenance viz honesty U1–U3 | 4/10 |
+| Vision freshness contract (ask-time frame, share-ended truth, MIME match) | 3 |
+| FOCUS/ACCOUNTABILITY engine (durable Temporal session, fresh frontmost read, host-hash lock, settle-announce-fallback, ledger + streak) | 6 |
+| `sense.pose` local organ (approval-gated, booleans only) | 6 |
+| Hands/3D gesture = flagged experiment via Phase 9 gate | 10 |
+
+Everything that could conflict was already resolved in recon §E: their `server.py` state loop → Temporal; their OpenRouter → LiteLLM; their `gpt-6-astra` default brain → our locked §5 chain (their model-performance claims = CLAIMED, unused); their single-HTML viewer → their data contract rendered in our Tauri/React stack. **Net: +~1.5 phase-weeks, no architecture change.**

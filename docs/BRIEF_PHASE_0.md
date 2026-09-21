@@ -39,7 +39,8 @@ Build, in this order:
 5. **DB migrations** (Alembic) — `tasks`, `task_steps`, `checkpoints`, `agent_history`, `failure_history` tables matching the schema; Postgres = machine truth.
 6. **Tauri app stub** — only: window + "SYSTEM ● ONLINE/DEMO" status pulled from `GET /v1/health`. **No dashboard features. No mock UI (Law 10).** (If Node toolchain missing, ship a plain `apps/web` static page hitting the same endpoint and say so in PROGRESS.)
 7. **Config** — `config/gateway.yaml` (ports, temporal namespace `agentos`, DB/Redis from **env vars**, never hardcoded); model groups file `config/model_groups.yaml` mirroring LiteLLM aliases (planning/coding/research/fast/vision/local) — read-only at this phase.
-8. **Tests + tooling** — pytest for gateway/state-machine; `make dev` (or `scripts/dev.ps1`) to run gateway+workers locally; ruff/mypy strict on services.
+8. **`deploy/scripts/preflight.py` (E1) — the harness that defines "done" forever.** Live-chain checks against the RUNNING system, no mocks, tick/cross per check, `N pass / N fail / N warn` summary, exit non-zero on any fail. Phase 0 checks: server up + serving viewer; graph/state loads; a real task runs end-to-end via Temporal; config secrets NOT reachable from browser (must fail loudly if reachable); served JS == files on disk; every LiteLLM group answers one real minimal call with the key in `.env` (skip with WARN if that provider key is absent). From now on: **whenever you claim done, run preflight and paste its summary line.**
+9. **Tests + tooling** — pytest for gateway/state-machine; `make dev` (or `scripts/dev.ps1`) to run gateway+workers locally; ruff/mypy strict on services.
 
 ## Phase 0 ACCEPTANCE TEST (must pass before you report "done")
 
@@ -62,6 +63,7 @@ Paste that real output into `docs/PROGRESS.md` under `## Phase 0 — FACT`. If y
 - [ ] checkpoint-before-every-step verified in DB rows
 - [ ] live events visible via WS
 - [ ] kill-and-resume acceptance test PASS (output in PROGRESS.md)
+- [ ] `deploy/scripts/preflight.py` implemented and printing all-pass (E1)
 - [ ] `docs/PROGRESS.md` updated, every claim tagged
 
 Next phase (do NOT start without user go-ahead): Phase 1 — model+agent layer (LiteLLM routing already configured in `deploy/litellm/config.yaml`; you build registry, health manager, adapters, router client).
