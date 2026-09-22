@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentos://contracts/workflow_node.schema.json",
+  "title": "AgenticOS Workflow Node",
+  "description": "One node of a declarative workflow (blueprint Phase 5 / Doc1 P10). A workflow node names a CAPABILITY, not a fixed vendor: the router picks a healthy agent. Nodes are checkpointed by the Temporal engine.",
+  "type": "object",
+  "required": ["node_id", "task", "capability", "inputs", "output", "validation"],
+  "properties": {
+    "node_id": { "type": "string", "pattern": "^[a-z0-9_]{2,64}$" },
+    "task": { "type": "string", "description": "prompt/instruction template, {{var}} interpolation from inputs" },
+    "capability": { "type": "string", "description": "routing key, e.g. coding, research, script, storyboard, render, seo, publish" },
+    "preferred_agent": { "type": ["string", "null"], "description": "soft preference; if unhealthy, fallback chain applies and swap is recorded (Law 4)" },
+    "model_group": { "enum": ["planning", "coding", "research", "fast", "vision", "local", "auto"], "default": "auto" },
+    "tools": { "type": "array", "items": { "type": "string" }, "description": "tool registry ids allowed for this node, e.g. playwright, ffmpeg, gh" },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "from"],
+        "properties": {
+          "name": { "type": "string" },
+          "from": { "type": "string", "description": "artifact ref / node output / task field / memory query" }
+        }
+      }
+    },
+    "dependencies": { "type": "array", "items": { "type": "string" }, "description": "node_ids that must complete first" },
+    "output": {
+      "type": "object",
+      "required": ["artifacts"],
+      "properties": {
+        "artifacts": { "type": "array", "items": { "type": "string" }, "description": "expected produced files, paths relative to task workspace" },
+        "state_updates": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["check"],
+        "properties": {
+          "check": { "enum": ["file_exists", "ffprobe_duration_gt", "json_valid", "tests_pass", "regex", "human_approval", "custom"] },
+          "args": { "type": ["object", "null"] }
+        }
+      },
+      "description": "node fails → retry policy → fallback agent. human_approval = Law 5 gate."
+    },
+    "retry": {
+      "type": "object",
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 1, "default": 3 },
+        "backoff_s": { "type": "integer", "minimum": 1, "default": 30 },
+        "on_exhausted": { "enum": ["fail_task", "fallback_agent", "wait_for_resource"], "default": "fallback_agent" }
+      }
+    },
+    "fallback": { "type": "array", "items": { "type": "string" }, "description": "alternative agent ids in try-order" },
+    "cost_ceiling_usd": { "type": ["number", "null"] },
+    "timeout_s": { "type": "integer", "default": 1800 }
+  },
+  "additionalProperties": false,
+  "examples": [{
+    "node_id": "generate_storyboard",
+    "task": "Create a storyboard (shots, durations, on-screen text) for: {{script}}",
+    "capability": "script",
+    "model_group": "planning",
+    "inputs": [{ "name": "script", "from": "node:write_script:artifacts/script.md" }],
+    "dependencies": ["write_script"],
+    "output": { "artifacts": ["storyboard.json"] },
+    "validation": [{ "check": "json_valid", "args": { "path": "storyboard.json" } }],
+    "retry": { "max_attempts": 3, "on_exhausted": "fallback_agent" },
+    "fallback": ["antigravity"]
+  }]
+}
