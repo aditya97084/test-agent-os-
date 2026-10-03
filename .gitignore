@@ -3,6 +3,10 @@
 deploy/.env
 *.pem
 *.key
+data/
+
+# build noise
+*.egg-info/
 
 # Runtime data — stays local, never in git
 data/

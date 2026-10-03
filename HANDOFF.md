@@ -84,6 +84,8 @@ Read AGENTS.md and docs/MASTER_BLUEPRINT.md first.
 Now execute docs/BRIEF_PHASE_0.md completely, in order: Phase -1 audit, wait for my confirmation, then Phase 0 skeleton until its acceptance test passes. Do not start any other phase.
 ```
 
+> **Pre-written code:** Phase-0 skeleton (gateway + durable engine + preflight + acceptance test) isme already committed hai — sandbox me local dev engine par **acceptance PASS / preflight 7 pass, 0 fail** (evidence `docs/PROGRESS.md`). Tumhara Phase-0 kaam = regenerate nahi, balki real compose stack par `AGENTOS_ENGINE=temporal` ke saath wahi tests pass karna + Tauri reconcile. "Poora OS generate kar do" type prompt kabhi mat dena — woh 3D-spaceship-without-engine wali bimari hai.
+
 - Phase -1 ke baad agent tumhe `docs/AUDIT_REPORT.md` dega → **tum confirm karo**, tabhi aage badhega (Law 9).
 - Phase 0 ka acceptance test (`kill app mid-task → reopen → resume from same step`) agent ko **apne haath se chalakar output paste karna hoga** PROGRESS.md me. Test output ke bina "done" = not done (Law 11).
 - Uske baad har phase: `docs/PHASE_BRIEFS.md` me us phase ka exact block paste karo (Phase 1 se Phase 11 tak sab ready hain). **Ek phase baar me.** Beech me kabhi "baaki sab bana do" mat bolo.
