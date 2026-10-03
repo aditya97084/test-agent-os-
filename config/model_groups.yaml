@@ -1,0 +1,14 @@
+# Mirror of the LiteLLM group aliases (deploy/litellm/config.yaml is normative — this file is
+# read-only reference for app code). App code MUST send only these aliases, never raw ids (Law 1).
+# E3 guard: user-spoken names resolve through this file; unknown/near-miss => refuse, list these.
+groups:
+  planning: "Hermes/decomposition — claude-sonnet-4-6 -> MiniMax-M3 -> qwen3"
+  coding:   "repo edits/tests — claude-sonnet-4-6 -> MiniMax-M3 -> qwen3-coder"
+  research: "long-context ingestion — MiniMax-M3 -> sonnet -> local"
+  fast:     "titles/classify — haiku-4-5 -> M2.7-highspeed -> llama3.2"
+  vision:   "screens/frames — gemini-2.5-flash -> sonnet"
+  local:    "free/privacy-only — ollama qwen3"
+aliases:
+  sonnet: "planning"
+  minimax: "planning"
+  cheap: "fast"

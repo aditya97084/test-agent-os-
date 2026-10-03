@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgenticOS — Phase 0 viewer</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font:14px/1.5 ui-monospace, Menlo, Consolas, monospace; background:#07090d; color:#d6deeb; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid #1b2330; }
+  h1 { font-size:15px; letter-spacing:.12em; margin:0; color:#e8f0ff; }
+  .pill { padding:2px 10px; border-radius:999px; border:1px solid #24324a; }
+  .on { color:#7ee2a0; border-color:#28502f; } .off { color:#ff8f8f; border-color:#502828; }
+  main { display:grid; grid-template-columns: 1fr 340px; gap:18px; padding:18px 20px; }
+  .card { background:#0c1118; border:1px solid #1b2330; border-radius:10px; padding:12px 14px; }
+  table { width:100%; border-collapse:collapse; } td,th { text-align:left; padding:6px 8px; border-bottom:1px solid #141c28; vertical-align:top;}
+  th { color:#7c8aa5; font-weight:600; font-size:12px; letter-spacing:.08em; }
+  .bar { height:6px; border-radius:4px; background:#141c28; overflow:hidden; min-width:110px; }
+  .bar i { display:block; height:100%; background:#39d98a; transition:width .4s; }
+  button { background:#101722; color:#d6deeb; border:1px solid #24324a; border-radius:6px; padding:4px 10px; cursor:pointer; }
+  button:hover { border-color:#3d5a80; } button.primary { background:#123021; border-color:#2c6e46; }
+  input { background:#101722; color:#d6deeb; border:1px solid #24324a; border-radius:6px; padding:6px 8px; width:100%; box-sizing:border-box; }
+  .steps div { padding:3px 0; } .done { color:#7ee2a0; } .run { color:#ffd479; } .wait { color:#7c8aa5; }
+  .note { color:#7c8aa5; font-size:12px; } footer { color:#546178; font-size:12px; padding:8px 20px 18px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AGENTIC OS · PHASE 0</h1>
+  <div><span id="sys" class="pill off">SYSTEM ● …</span> <span id="eng" class="pill"></span></div>
+</header>
+<main>
+  <section class="card">
+    <table>
+      <thead><tr><th>task</th><th>goal</th><th>status</th><th>progress</th><th>agent</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="note">Live from Gateway /v1/tasks (1.5 s poll). No mock rows exist: empty table = no tasks. Steps below are Postgres/SQLite truth, not animation.</p>
+  </section>
+  <aside class="card">
+    <b>New demo task</b>
+    <p class="note">6 × 15 s durable steps (tune via DEMO_STEP_SECONDS). Built to prove kill→resume.</p>
+    <input id="goal" value="Demo: prove crash-proof resume" />
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="primary" onclick="createTask()">CREATE</button>
+    </div>
+    <hr style="border-color:#1b2330" />
+    <b>Inspect</b>
+    <div id="sel" class="steps">select a task row…</div>
+  </aside>
+</main>
+<footer>health /v1/health · diag /v1/diag · engine badge says <code>local(dev)</code> when Temporal is NOT backing you — that is a dev-only honesty flag, never production.</footer>
+<script>
+let selected = null;
+async function j(u, opt) { const r = await fetch(u, opt); if (!r.ok) throw new Error(await r.text()); return r.json(); }
+async function health() {
+  try {
+    const h = await j('/v1/health');
+    const s = document.getElementById('sys');
+    s.textContent = 'SYSTEM ● ' + h.system; s.className = 'pill ' + (h.system==='ONLINE' ? 'on':'off');
+    document.getElementById('eng').textContent = 'engine: ' + h.engine;
+  } catch (e) { const s=document.getElementById('sys'); s.textContent='SYSTEM ● OFFLINE'; s.className='pill off'; }
+}
+async function tasks() {
+  const d = await j('/v1/tasks');
+  const tb = document.getElementById('rows'); tb.innerHTML = '';
+  d.tasks.forEach(t => {
+    const total = t.completed_steps.length + t.remaining_steps.length || 6;
+    const pct = Math.round(100*t.completed_steps.length/total);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><a href="#" onclick="selTask('${t.task_id}');return false">${t.task_id.slice(0,13)}</a></td>
+      <td>${t.goal.slice(0,40)}</td><td>${t.status}</td>
+      <td><div class="bar"><i style="width:${pct}%"></i></div></td>
+      <td>${t.current_agent||'—'}</td>
+      <td><button onclick="sig('${t.task_id}','pause')">pause</button> <button onclick="sig('${t.task_id}','resume')">resume</button> <button onclick="sig('${t.task_id}','cancel')">cancel</button></td>`;
+    tb.appendChild(tr);
+  });
+  if (selected) inspect();
+}
+async function selTask(id) { selected = id; inspect(); }
+async function inspect() {
+  if (!selected) return;
+  const s = await j('/v1/tasks/'+selected+'/steps');
+  const t = await j('/v1/tasks/'+selected);
+  const done = new Set(t.state.completed_steps);
+  let html = `<div class="note">${selected} · checkpoint: step ${t.state.checkpoint.step}</div>`;
+  for (let i=1;i<=6;i++){ const n='demo_step_'+i;
+    html += `<div class="${done.has(n)?'done':(s.steps.some(x=>x.step===n&&x.state==='running')?'run':'wait')}">${done.has(n)?'✓':'□'} ${n}</div>`; }
+  html += `<div class="note">checkpoints: ${s.checkpoints.length} · attempts: ${s.steps.length}</div>`;
+  document.getElementById('sel').innerHTML = html;
+}
+async function createTask() {
+  const goal = document.getElementById('goal').value || 'demo';
+  const r = await j('/v1/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({goal})});
+  selected = r.state.task_id; refresh();
+}
+async function sig(id, op) { await j(`/v1/tasks/${id}/${op}`, {method:'POST'}); refresh(); }
+function refresh(){ health(); tasks(); }
+refresh(); setInterval(refresh, 1500);
+</script>
+</body>
+</html>

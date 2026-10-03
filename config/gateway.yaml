@@ -1,0 +1,20 @@
+# AgenticOS gateway config — env vars override (AGENTOS_*, GATEWAY_PORT, DEMO_*).
+# Never put secrets here (Law 7): only var NAMES/defaults; values live in deploy/.env.
+gateway:
+  host: 127.0.0.1
+  port: 8000
+
+temporal:
+  host: 127.0.0.1:7233
+  namespace: agentos          # compose stack registers this; local test server: TEMPORAL_NAMESPACE=default
+  task_queue: agentos-main
+
+database:
+  # Full DSN preferred via env AGENTOS_DB_URL (asyncpg for postgres, aiosqlite for dev)
+  url: "postgresql+asyncpg://agentos:${POSTGRES_PASSWORD}@127.0.0.1:5432/agentos"
+
+executor:
+  # temporal = durable (production). local = dev-only (see engine_local docstring), never auto-fallback.
+  mode: temporal
+  demo_steps: 6
+  demo_step_seconds: 15

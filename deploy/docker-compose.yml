@@ -1,0 +1,128 @@
+# AgenticOS core stack — Layer 1 durable spine + model gateway.
+# All ports bound to 127.0.0.1 only (never exposed to LAN — blueprint security).
+# Start: deploy/scripts/setup.ps1 (Win) or setup.sh. This file is referenced by BLUEPRINT §5.
+name: agentos
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16          # Postgres 16 + pgvector extension (tasks + semantic memory)
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agentos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-agentos}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentos} -d ${POSTGRES_DB:-agentos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine                  # working memory, live events, locks
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  temporal:
+    image: temporalio/auto-setup:1.27.0    # durable execution engine (verify latest stable tag at install time)
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-agentos}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_SEEDS: postgres
+    ports:
+      - "127.0.0.1:7233:7233"
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2            # http://127.0.0.1:8080 — watch workflows resume live
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  temporal-ns:                             # one-shot: register namespace 'agentos' (profile: setup)
+    image: temporalio/admin-tools:1.27.0
+    profiles: ["setup"]
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    entrypoint: ["sh", "-c"]
+    command: ["temporal operator namespace create --namespace agentos --retention 30d --log-level error && echo 'namespace agentos created' || echo 'namespace agentos exists (ok)'"]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable   # model router: Sonnet → MiniMax → Ollama fallback chains
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY in deploy/.env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"     # reach Ollama running on host (Win/Linux)
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request as u;u.urlopen('http://localhost:4000/health/liveliness', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+
+  # ---------- optional profiles (kept out of default boot — free-first, lean-first) ----------
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # after first boot: docker compose --profile local exec ollama ollama pull qwen3:8b
+    #                  ... ollama pull qwen3-coder:30b
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest   # external integration layer ONLY (webhooks/social/CRM) — never core reasoning
+    profiles: ["integrations"]
+    restart: unless-stopped
+    environment:
+      GENERIC_TIMEZONE: ${TZ:-Asia/Kolkata}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    ports:
+      - "127.0.0.1:5678:5678"
+
+  # Phase 0 (built by coding agent, not shipped here) will add e.g.:
+  # gateway:   python:3.12-slim + services/gateway, port ${GATEWAY_PORT:-8000}
+  # temporal-worker: services/orchestrator, task queue agentos-main, namespace agentos
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+  n8n_data:

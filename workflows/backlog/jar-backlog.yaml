@@ -1,0 +1,117 @@
+# JAR backlog — extracted from docs/research/JARVIS_HOLO_PACK_RECON.md
+# status: folded = already assigned into blueprint §7 phase (goes in when that phase builds)
+#         sandbox = must pass Phase 9 Evolution gate before production
+#         deferred / rejected = recorded, not built
+# Every item carries: source · mechanism (not code) · phase · acceptance test · evidence tag.
+
+meta:
+  origin: "Zubair Trabzada — Build Your Own Jarvis (GPT-6 Astra pack, 16 prompts) + Bare-Hands Holo Pack, 2026"
+  ingest_rule: "mechanism-only adoption; model performance/price claims = CLAIMED-unverified, unused"
+  created: "2026-09-21"
+
+items:
+  - id: JAR-001
+    title: "Tier-0 keyword+title retrieval fallback (no-embedding search)"
+    phase: 4
+    mechanism: "score notes by keyword overlap, title matches weighted higher, top-K feed; runs when embedding model unavailable"
+    acceptance: "with embedder/Ollama disabled, /memory/query still returns ranked sources"
+    status: folded
+  - id: JAR-002
+    title: "Web-lite voice channel (browser STT/TTS) with FINISH_MS buffer"
+    phase: 4
+    mechanism: "one named constant FINISH_MS=900; speech arriving before timer appends+restarts; 'stop'/'wait' bypass; ?mute=1 checked in the single speak() function; listening/thinking/speaking status line"
+    acceptance: "deliberate mid-sentence pause does NOT dispatch; ?mute=1 tab silent under test; status line always truthful"
+    status: folded
+  - id: JAR-003
+    title: "Provenance visualization honesty (U1-U3: match evidence set, no narration of screen, small-talk = no view side-effects)"
+    phase: 4
+    acceptance: "answer citing 4 nodes lights cluster not one; 'good morning' moves nothing; test asserts camera/selection state frozen"
+    status: folded
+  - id: JAR-004
+    title: "Persona single-block config + live-count boot greeting"
+    phase: 4
+    mechanism: "config/persona.md injected as Hermes system prompt block; greetings read real counters from data"
+    acceptance: "swap persona file -> voice tone changes with zero code edits; greeting count matches DB rows at that second"
+    status: folded
+  - id: JAR-005
+    title: "/memory/capture — voice 'remember that…' writes .md + indexes ATOMICALLY, failure never silent"
+    phase: 4
+    acceptance: "capture question immediately after retrieves it; corrupted write test -> user gets a spoken loud failure (no silent forget)"
+    status: folded
+  - id: JAR-006
+    title: "Vision freshness contract (frame captured at ask-time; share-ended = honest error; MIME must match encoding)"
+    phase: 3
+    acceptance: "cover screen with test pattern after share start -> answer describes test pattern, not old frame; kill share mid-session -> 'source ended' error, never a stale-memory answer"
+    status: folded
+  - id: JAR-007
+    title: "preflight.py live-chain harness — 'Done = preflight passed' (E1); incl. served-vs-disk file hash check + secrets-not-reachable check"
+    phase: 0
+    acceptance: "CI/dev flow: no phase marked done without pasted preflight summary line; exit non-zero on any fail; harness grows one check per real incident"
+    status: folded
+  - id: JAR-008
+    title: "Model-swap honesty guard: explicit known-id registry, near-miss = loud refusal, runtime-only swaps, one swap function, pinned aliases (E3)"
+    phase: 1
+    acceptance: "say 'use opus 99' -> refusal lists available ids, never nearest match; swap mid-session logs Requested/Actual/Reason; restart returns to config brain"
+    status: folded
+  - id: JAR-009
+    title: "FOCUS/ACCOUNTABILITY engine (server-side 1s-tick session, fresh frontmost query per tick, host-hash tab lock, grace 800ms, 3-tier callout pools, snooze/excuse-refund/nag-cadence, home-base exempt, aggregates-only ledger + streak)"
+    phase: 6
+    mechanism: "identities compared+discarded inside reader; client state = whitelist booleans/counters"
+    acceptance: "machine reboot mid-session -> session resumes (our Temporal upgrade over source); privacy test with made-up label proves absence from state/ledger/logs"
+    status: folded
+  - id: JAR-010
+    title: "Settle-announce-fallback law for ALL target attach (deferred lock: 2-tick settle, audible confirm, 45s app-only fallback, never guess from background/2nd monitor)"
+    phase: 6
+    acceptance: "start focus from Jarvis tab -> deferred=true visible in /diag -> switch+settle -> 'Locked on'; never-leave-home-tab case falls back to app-only"
+    status: folded
+  - id: JAR-011
+    title: "Overlay trust rule (E8a): own-card click must not read as user frontmost; read browser front window via scripting; route order: retarget > share cmds; persona prompt states real recovery paths"
+    phase: 6
+    acceptance: "press card LOCK button -> target becomes user's work tab, not the card; LLM asked 'change target' recites the actual voice phrase, not 'restart the session'"
+    status: folded
+  - id: JAR-012
+    title: "Name-out-loud-store-nothing privacy pattern (E6) with fake-unique-token absence test"
+    phase: 6
+    acceptance: "drift label spoken once; test injects token absent from all canned text -> assert absent from state/report/notes/log"
+    status: folded
+  - id: JAR-013
+    title: "sense.pose eyes organ — in-browser landmarks, booleans only, frames never leave machine; nudge sustain 700ms + 30s cooldown; absence grace 12s; relief valve 'give me a minute'; EAR LAW (E7): no organ opens the mic"
+    phase: 6
+    gate: "enabling any sense.* organ requires recorded approval (Law 5); opt-in per session"
+    acceptance: "phone-posture test drives nudge inside 1s; relief line silences 180s; mic stays closed while eyes on + assistant states 'ears off'"
+    status: folded
+  - id: JAR-014
+    title: "Monitor pattern (E5): cheap-watch -> expensive-think. 5s local thumbnail diff, escalate to model only on threshold, 3-min cooldown, reuse the same share for Q&A, entire-screen enforcement with honest picker steer"
+    phase: 6
+    acceptance: "60s of no-change screen costs zero model calls (cost log proves it); first change past threshold = exactly one call"
+    status: folded
+  - id: JAR-015
+    title: "Scripted announcement line-pools for user-visible state changes; pretty names not raw slugs; config/model_aliases.yaml pins spoken forms"
+    phase: 1
+    acceptance: "two consecutive swaps -> two different lines (rotation); unknown alias -> refusal listing pinned names"
+    status: folded
+  - id: JAR-016
+    title: "Field tooling: every organ ships GET /…/diag (booleans/counters, live process only) + scripted probe with verdict-in-title; probe asserts viewport (hidden-tab timer throttling lies); ledger whitelist-keys test"
+    phase: 2
+    mechanism: "'read sensors before touching code' (E2)"
+    acceptance: "field bug repro: diag output alone localizes wrong-lock cause; ledger schema test rejects non-whitelisted key"
+    status: folded
+  - id: JAR-H1
+    title: "Bare-hands gesture input for 3D workspace (pinch/grab/throw, held-poses-only U5, ?sim=1 synthetic mode U4, mouse fallback)"
+    phase: 10
+    gate: "sandbox via Phase 9 — experiment flag only; never a core dependency"
+    acceptance: "same scripted probe passes with synthetic hands AND mouse; pose-based (no motion) gestures"
+    status: sandbox
+  - id: JAR-H2
+    title: "Vendor all runtime-critical assets locally (no CDN at runtime) — adblock/offline-proof (E9)"
+    phase: 0
+    acceptance: "network-offline boot renders dashboard + all libs resolve from vendored dir"
+    status: folded
+  - id: JAR-H3
+    title: "3D props/GLB viewer pipeline, museum models, re-skin branding kit"
+    status: rejected
+    reason: "demo garnish, no mechanism relevant to OS; license-check habit already in Phase 9"
+  - id: JAR-H4
+    title: "Pack's 'gpt-6-astra' model defaults, latency/price claims, OpenRouter-only routing"
+    status: rejected
+    reason: "model choice locked in blueprint §5 (Sonnet-4.6 → MiniMax-M3 → local); claims unverified (CLAIMED tag); our LiteLLM is self-hosted and strictly better for failover governance"

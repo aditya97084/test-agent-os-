@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentos://contracts/agent_registry.schema.json",
+  "title": "AgenticOS Agent Registry Entry",
+  "description": "Every agent/tool (coding CLI, Hermes, workers) registers here. UI health dots render from `health.state`. Never assume availability — probe it.",
+  "type": "object",
+  "required": ["id", "name", "type", "capabilities", "execution", "health"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,40}$", "examples": ["claude-code", "codex", "antigravity", "hermes", "opencode", "qwen-code", "deepseek", "local-ollama"] },
+    "name": { "type": "string" },
+    "type": { "enum": ["coding_agent", "orchestrator_adapter", "research", "browser", "desktop", "media", "publishing", "voice", "custom"] },
+    "role": { "enum": ["layer2_cognitive", "layer1_execution", "worker", "tool"], "description": "Hermes = layer2_cognitive; gateway/temporal = layer1; everything else worker/tool" },
+    "capabilities": { "type": "array", "items": { "type": "string" }, "description": "routing keys, e.g. coding, refactoring, debugging, testing, video-compose, seo-audit" },
+    "execution": { "enum": ["cli", "headless_api", "subprocess", "in_process", "temporal_activity"] },
+    "invocation": {
+      "type": ["object", "null"],
+      "description": "how to actually call it. If neither documented headless API nor CLI exists → agent stays GUI-automation only and must NOT get a fake adapter (Law 10).",
+      "properties": {
+        "bin": { "type": ["string", "null"] },
+        "args_template": { "type": ["string", "null"] },
+        "endpoint": { "type": ["string", "null"] },
+        "stdin_protocol": { "type": ["string", "null"], "examples": ["stream-json", "none"] }
+      }
+    },
+    "model_group": { "type": ["string", "null"], "enum": ["planning", "coding", "research", "fast", "vision", "local", null], "description": "LiteLLM alias this agent uses for its own LLM calls; app never names raw models" },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "kind": { "enum": ["env_key", "os_keychain", "oauth", "subscription_login", "none"] },
+        "env_var": { "type": ["string", "null"], "description": "NAME only — value never stored here (Law 7)" },
+        "checked_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "health": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "enum": ["AVAILABLE", "BUSY", "RATE_LIMITED", "QUOTA_EXHAUSTED", "AUTH_EXPIRED", "SUBSCRIPTION_EXPIRED", "CLI_MISSING", "CRASHED", "OFFLINE", "DISABLED"]
+        },
+        "last_ok_at": { "type": ["string", "null"], "format": "date-time" },
+        "last_fail_at": { "type": ["string", "null"], "format": "date-time" },
+        "last_error": { "type": ["string", "null"] },
+        "checks": {
+          "type": "object",
+          "properties": {
+            "cli_present": { "type": "boolean" },
+            "auth_valid": { "type": "boolean" },
+            "process_alive": { "type": "boolean" },
+            "provider_reachable": { "type": "boolean" }
+          }
+        },
+        "probe_interval_s": { "type": "integer", "minimum": 10, "default": 30 }
+      }
+    },
+    "fallback_order": { "type": "integer", "minimum": 0, "description": "priority within capability group; lower tried first (Claude=0, Codex=1, Antigravity=2, OpenCode=3, local=9)" },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_concurrent_tasks": { "type": "integer", "minimum": 1, "default": 1 },
+        "timeout_s": { "type": "integer", "default": 1800 },
+        "cost_ceiling_usd_per_task": { "type": ["number", "null"] }
+      }
+    },
+    "installed_path": { "type": ["string", "null"] },
+    "version": { "type": ["string", "null"] },
+    "license": { "type": ["string", "null"] },
+    "notes": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

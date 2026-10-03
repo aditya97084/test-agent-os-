@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentos://contracts/task_state.schema.json",
+  "title": "AgenticOS Durable Task State",
+  "description": "The single truth of any task. Agents' chat history is NOT state. Enforced by Postgres + Temporal (upsert memo). Checkpoint MUST be written before every step. Blueprint Phase 2 / Doc1 Phase 6+7.",
+  "type": "object",
+  "required": ["task_id", "goal", "priority", "status", "current_agent", "checkpoint", "created_at", "updated_at"],
+  "properties": {
+    "task_id": { "type": "string", "pattern": "^task_[a-z0-9]{6,40}$" },
+    "project_id": { "type": ["string", "null"] },
+    "workflow_id": { "type": ["string", "null"], "description": "workflow definition version used, e.g. wf_youtube_video@3" },
+    "mode": { "enum": ["DIRECT", "AUTONOMOUS"] },
+    "goal": { "type": "string", "description": "user's objective, verbatim intent" },
+    "description": { "type": ["string", "null"] },
+    "priority": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "status": {
+      "enum": ["CREATED", "PLANNING", "RUNNING", "WAITING_FOR_USER", "WAITING_FOR_RESOURCE", "RETRY_SCHEDULED", "PAUSED", "COMPLETED", "FAILED_FINAL", "CANCELLED"]
+    },
+    "current_agent": { "type": ["string", "null"], "description": "registry id of agent executing right now" },
+    "requested_agent": { "type": ["string", "null"], "description": "what the user asked for (Law 4 transparency)" },
+    "actual_reason": { "type": ["string", "null"], "description": "why actual != requested, human readable" },
+    "workspace": { "type": ["string", "null"] },
+    "branch": { "type": ["string", "null"] },
+    "temporal_workflow_id": { "type": ["string", "null"] },
+    "temporal_run_id": { "type": ["string", "null"] },
+    "checkpoint": {
+      "type": "object",
+      "required": ["step", "attempt"],
+      "properties": {
+        "step": { "type": "string", "description": "current workflow node id, e.g. generate_storyboard" },
+        "attempt": { "type": "integer", "minimum": 0 },
+        "git_commit": { "type": ["string", "null"] },
+        "input_artifacts": { "type": "array", "items": { "type": "string" } },
+        "output_artifacts": { "type": "array", "items": { "type": "string" } },
+        "selected_model": { "type": ["string", "null"], "description": "LiteLLM group alias used, e.g. planning" },
+        "state_blob_ref": { "type": ["string", "null"], "description": "path/id to serialized step state" },
+        "saved_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "completed_steps": { "type": "array", "items": { "type": "string" } },
+    "remaining_steps": { "type": "array", "items": { "type": "string" } },
+    "files_changed": { "type": "array", "items": { "type": "string" } },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "result"],
+        "properties": {
+          "name": { "type": "string" },
+          "result": { "enum": ["PASS", "FAIL", "SKIPPED", "NOT_RUN"] },
+          "evidence_ref": { "type": ["string", "null"], "description": "log/artifact path — PASS without evidence is illegal" }
+        }
+      }
+    },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "dependencies": { "type": "array", "items": { "type": "string" }, "description": "task_ids that must be COMPLETED first" },
+    "approval": {
+      "type": ["object", "null"],
+      "description": "present when a gated action awaits/passed human approval (Law 5)",
+      "required": ["action", "state"],
+      "properties": {
+        "action": { "type": "string", "description": "e.g. publish.youtube, delete.files" },
+        "state": { "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "decided_by": { "type": ["string", "null"] },
+        "decided_at": { "type": ["string", "null"], "format": "date-time" },
+        "payload_ref": { "type": ["string", "null"] }
+      }
+    },
+    "agent_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["agent", "from_at"],
+        "properties": {
+          "agent": { "type": "string" },
+          "from_at": { "type": "string", "format": "date-time" },
+          "to_at": { "type": ["string", "null"], "format": "date-time" },
+          "steps_done": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "failure_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "agent", "reason"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "agent": { "type": ["string", "null"] },
+          "model": { "type": ["string", "null"] },
+          "reason": { "type": "string", "description": "subscription_expired | rate_limited | crashed | network | validation_failed | ..." },
+          "recovered_via": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "tokens_in": { "type": "integer", "minimum": 0 },
+        "tokens_out": { "type": "integer", "minimum": 0 },
+        "usd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "memory_refs": { "type": "array", "items": { "type": "string" }, "description": "memory service ids written after this task (Phase 4 / Doc1 P25)" },
+    "evidence_tag": { "enum": ["FACT", "INFERENCE", "UNKNOWN", "HYPOTHESIS"], "default": "FACT" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

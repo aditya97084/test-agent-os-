@@ -1,0 +1,5 @@
+agentos_contracts
+agentos_db
+agentos_events
+agentos_gateway
+agentos_orchestrator

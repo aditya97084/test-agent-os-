@@ -1,0 +1,4 @@
+from agentos_orchestrator.worker_main import main
+
+if __name__ == "__main__":
+    main()

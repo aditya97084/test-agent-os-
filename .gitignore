@@ -1,0 +1,28 @@
+# Secrets — never commit (Law 7)
+.env
+deploy/.env
+*.pem
+*.key
+
+# Runtime data — stays local, never in git
+data/
+logs/
+artifacts/
+sandbox/
+memory/**/
+deploy/temporal_data/
+
+# Python / Node noise
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+dist/
+build/
+.target/
+target/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
