@@ -1,0 +1,9 @@
+# crawling
+youtube-transcript-api>=1.0.0
+yt-dlp>=2024.8.6
+trafilatura>=1.12.0     # best html -> markdown extraction
+markdownify>=0.13.1     # fallback extractor
+
+# everything else (graph, lint, run gate) is pure stdlib on purpose:
+# scripts/build_graph.py, scripts/wiki_lint.py, scripts/verify_gate.py,
+# scripts/run_and_log.py and scripts/crawl_report.py need no third-party packages.

@@ -1,0 +1,23 @@
+# secrets
+.env
+
+# raw corpus: large + third-party content. The compiled wiki is the artifact we version.
+raw/**
+!raw/README.md
+!raw/MANIFEST.md
+
+# execution state
+.state/
+sandbox/__pycache__/
+
+# generated graph (rebuild with: python scripts/build_graph.py)
+wiki/_graph/graph.html
+wiki/_graph/graph.json
+wiki/_graph/lint-report.md
+
+# python / node
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
