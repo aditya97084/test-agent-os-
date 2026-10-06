@@ -1,0 +1,54 @@
+{
+  "person": "Andrej Karpathy",
+  "note": "Edit this list before running /crawl-sources. Public sources only. Verify every URL exists before crawling - the agent must report 404s, not invent replacements.",
+  "sources": [
+    {
+      "type": "youtube",
+      "url": "https://www.youtube.com/@AndrejKarpathy/videos",
+      "why": "lectures: nanoGPT, GPT-2 from scratch, Intro to LLMs, tokenizer, micrograd, Deep Dive into LLMs"
+    },
+    {
+      "type": "youtube",
+      "url": "https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ",
+      "why": "Neural Networks: Zero to Hero playlist"
+    },
+    {
+      "type": "blog",
+      "url": "https://karpathy.bearblog.dev/",
+      "crawl_links": true,
+      "why": "current blog"
+    },
+    {
+      "type": "blog",
+      "url": "http://karpathy.github.io/",
+      "crawl_links": true,
+      "why": "old blog: Software 2.0, Unreasonable Effectiveness of RNNs, A Recipe for Training Neural Networks"
+    },
+    {
+      "type": "blog",
+      "url": "https://medium.com/@karpathy",
+      "why": "Medium era posts"
+    },
+    { "type": "github", "repo": "karpathy/nanoGPT", "why": "canonical teaching repo" },
+    { "type": "github", "repo": "karpathy/micrograd", "why": "smallest-version-first in code" },
+    { "type": "github", "repo": "karpathy/minGPT", "why": "readable transformer" },
+    { "type": "github", "repo": "karpathy/llm.c", "why": "from-scratch discipline" },
+    { "type": "github", "repo": "karpathy/nanochat", "why": "full-stack LLM pipeline" },
+    { "type": "github", "repo": "karpathy/LLM101n", "why": "course structure = how he sequences ideas" },
+    {
+      "type": "x",
+      "user": "karpathy",
+      "since": "2023-01-01",
+      "why": "day-to-day working opinions; needs TWITTERAPI_IO_KEY in .env"
+    },
+    {
+      "type": "misc",
+      "url": "https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f",
+      "why": "the LLM Wiki idea file this whole project is built on"
+    }
+  ],
+  "manual_clip": [
+    "Any podcast appearance without public captions - clip the transcript into raw/misc/ yourself",
+    "Anything behind a login or paywall - do not crawl, record it as a gap"
+  ]
+}
